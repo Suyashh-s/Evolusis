@@ -31,6 +31,21 @@ This project implements a sophisticated AI agent backend service that exceeds th
 
 ---
 
+## Demonstration Video
+
+Watch the complete demonstration of Evolusis in action:
+
+**[📹 View Full Demo on Loom](https://www.loom.com/share/4e87ee3302524e3f985284d8717fa067)**
+
+The video showcases:
+- Real-time voice interaction with the AI assistant
+- Video analysis capabilities (camera feed)
+- Screen sharing analysis for technical assistance
+- Weather API integration (with and without API scenarios)
+- Conversation context and memory features
+
+---
+
 ## Application Screenshots
 
 ### Screenshot 1: AI Assistant Interface with Question Response
