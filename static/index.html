@@ -1,0 +1,2122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant - Powered by Gemini - v2.0</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://unpkg.com/livekit-client/dist/livekit-client.umd.js"></script>
+    <script>
+        // CONTINUOUS SIGN LANGUAGE VERSION 2.0
+        console.log('🚀 Loading AI Assistant v2.0 - Continuous Sign Language Edition');
+        
+        // Debug: Check what LiveKit exposes
+        window.addEventListener('load', () => {
+            console.log('Checking LiveKit globals...');
+            console.log('window.LivekitClient:', typeof window.LivekitClient);
+            console.log('window.LiveKit:', typeof window.LiveKit);
+            console.log('window.livekit:', typeof window.livekit);
+            
+            // List all globals that might be LiveKit
+            const possibleNames = Object.keys(window).filter(k => 
+                k.toLowerCase().includes('live') || k.toLowerCase().includes('kit')
+            );
+            console.log('Possible LiveKit globals:', possibleNames);
+            
+            // Try to find the actual export
+            if (window.LivekitClient) {
+                console.log('✅ Found: window.LivekitClient');
+            } else if (window.LiveKit) {
+                console.log('✅ Found: window.LiveKit');
+            } else if (window.livekit) {
+                console.log('✅ Found: window.livekit');
+            } else {
+                console.warn('⚠️ LiveKit not found in expected locations');
+            }
+        });
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #10a37f;
+            --primary-dark: #0d8c6d;
+            --bg-main: #343541;
+            --bg-sidebar: #202123;
+            --bg-input: #40414f;
+            --text-primary: #ececf1;
+            --text-secondary: #9a9b9f;
+            --border: #565869;
+            --error: #ef4444;
+            --success: #22c55e;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Layout */
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .new-chat-btn {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+
+        .new-chat-btn:hover {
+            background: var(--bg-input);
+        }
+
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .history-item {
+            padding: 12px;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: background 0.2s;
+        }
+
+        .history-item:hover {
+            background: var(--bg-input);
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Main Chat Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .chat-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+        }
+
+        .mode-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .mode-btn:hover {
+            background: var(--bg-input);
+            color: var(--text-primary);
+        }
+
+        .mode-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .message {
+            display: flex;
+            gap: 15px;
+            max-width: 800px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            margin-left: auto;
+            flex-direction: row-reverse;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .user .avatar {
+            background: var(--primary);
+        }
+
+        .assistant .avatar {
+            background: var(--bg-input);
+        }
+
+        .message-content {
+            background: var(--bg-input);
+            padding: 15px;
+            border-radius: 12px;
+            line-height: 1.6;
+            max-width: 100%;
+        }
+
+        .user .message-content {
+            background: var(--primary);
+        }
+
+        .message-content code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .message-content pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        .message-content img {
+            max-width: 300px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .thinking {
+            display: inline-flex;
+            gap: 4px;
+            padding: 8px 0;
+        }
+
+        .thinking span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-secondary);
+            animation: bounce 1.4s infinite;
+        }
+
+        .thinking span:nth-child(2) { animation-delay: 0.2s; }
+        .thinking span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-8px); }
+        }
+
+        /* Input Area */
+        .input-container {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            background: var(--bg-main);
+        }
+
+        .input-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .input-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 8px 14px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .action-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        /* Pulsing animation for continuous audio */
+        #continuousAudioBtn.active {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        #messageInput {
+            flex: 1;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 14px 16px;
+            border-radius: 12px;
+            font-size: 15px;
+            resize: none;
+            max-height: 200px;
+            font-family: inherit;
+        }
+
+        #messageInput:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        #sendBtn {
+            padding: 14px 20px;
+            background: var(--primary);
+            border: none;
+            color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.2s;
+            min-width: 52px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #sendBtn:hover {
+            background: var(--primary-dark);
+        }
+
+        #sendBtn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* LiveKit Video/Screen Share */
+        .livekit-container {
+            position: absolute;
+            bottom: 100px;
+            right: 20px;
+            width: 320px;
+            background: var(--bg-sidebar);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            display: none;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+        }
+
+        .livekit-container.active {
+            display: block;
+        }
+
+        .livekit-header {
+            padding: 12px;
+            background: var(--bg-input);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .livekit-controls {
+            display: flex;
+            gap: 8px;
+            padding: 10px;
+            background: var(--bg-sidebar);
+            justify-content: center;
+        }
+
+        .livekit-btn {
+            padding: 8px 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .livekit-btn:hover {
+            background: var(--primary);
+        }
+
+        #livekitVideo {
+            width: 100%;
+            height: 240px;
+            background: #000;
+        }
+
+        /* File Preview */
+        .file-preview {
+            display: none;
+            padding: 10px;
+            background: var(--bg-input);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-preview.active {
+            display: flex;
+        }
+
+        .file-preview img {
+            max-width: 60px;
+            max-height: 60px;
+            border-radius: 6px;
+        }
+
+        .file-info {
+            flex: 1;
+            font-size: 13px;
+        }
+
+        .remove-file {
+            padding: 6px 12px;
+            background: var(--error);
+            border: none;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        /* Recording Indicator */
+        .recording-indicator {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: var(--error);
+            color: white;
+            border-radius: 8px;
+            font-size: 14px;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        .recording-indicator.active {
+            display: flex;
+        }
+
+        .recording-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: white;
+            animation: pulse 1s infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: absolute;
+                left: -260px;
+                z-index: 1000;
+                height: 100vh;
+            }
+
+            .sidebar.active {
+                transform: translateX(260px);
+            }
+
+            .livekit-container {
+                width: 100%;
+                right: 0;
+                bottom: 0;
+                border-radius: 0;
+            }
+
+            .message {
+                max-width: 100%;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-sidebar);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        /* Utilities */
+        .hidden {
+            display: none !important;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <button class="new-chat-btn" onclick="newChat()">
+                    <span>➕</span> New Chat
+                </button>
+            </div>
+            
+            <div class="chat-history" id="chatHistory">
+                <!-- Chat history items will be loaded here -->
+            </div>
+            
+            <div class="sidebar-footer">
+                <button class="new-chat-btn" onclick="clearAllChats()" style="background: #dc3545; margin-bottom: 10px;">
+                    <span>🗑️</span> Clear All Chats
+                </button>
+                <div class="status-badge">
+                    <div class="status-dot"></div>
+                    <span>Powered by Gemini (FREE)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="chat-header">
+                <h2 style="font-size: 16px; font-weight: 600;">AI Assistant</h2>
+                <div class="mode-selector">
+                    <button class="mode-btn active" data-mode="text" onclick="switchMode('text')">
+                        💬 Text
+                    </button>
+                    <button class="mode-btn" data-mode="voice" onclick="switchMode('voice')">
+                        🎤 Voice
+                    </button>
+                    <button class="mode-btn" data-mode="video" onclick="switchMode('video')">
+                        📹 Video
+                    </button>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            <div class="chat-messages" id="chatMessages">
+                <div class="message assistant">
+                    <div class="avatar">🤖</div>
+                    <div class="message-content">
+                        <p>👋 Hello! I'm your AI assistant powered by Google Gemini & LiveKit.</p>
+                        <p>I can help you with:</p>
+                        <ul style="margin-left: 20px; margin-top: 8px;">
+                            <li>💬 Text conversations with memory</li>
+                            <li>🎤 Voice commands via LiveKit</li>
+                            <li>� Video conferencing via LiveKit</li>
+                            <li>👋 Hand sign detection</li>
+                            <li>📹 Video calls with screen sharing</li>
+                            <li>🌤️ Weather updates</li>
+                            <li>📰 Latest news</li>
+                            <li>📚 Wikipedia facts</li>
+                        </ul>
+                        <p style="margin-top: 10px;">What would you like to explore today?</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <!-- Action Buttons -->
+                    <div class="input-actions">
+                        <button class="action-btn" onclick="triggerFileUpload('image')" title="Upload Image">
+                            📎 Image
+                        </button>
+                        <button class="action-btn" id="recordBtn" onclick="toggleRecording()" title="Voice Input (One-time)">
+                            🎤 Record
+                        </button>
+                        <button class="action-btn" id="continuousAudioBtn" onclick="toggleContinuousAudio()" title="Continuous Voice Input">
+                            🎙️ Auto Listen
+                        </button>
+                        <button class="action-btn" onclick="toggleVideo()" title="Start Video Call">
+                            📹 Video Call
+                        </button>
+                        <button class="action-btn" onclick="shareScreen()" title="Share Screen">
+                            🖥️ Share Screen
+                        </button>
+                        <button class="action-btn" onclick="clearChat()" title="Clear Chat">
+                            🗑️ Clear
+                        </button>
+                    </div>
+
+                    <!-- File Preview -->
+                    <div class="file-preview" id="filePreview">
+                        <img id="previewImage" src="" alt="Preview">
+                        <div class="file-info">
+                            <div id="fileName">Image attached</div>
+                        </div>
+                        <button class="remove-file" onclick="removeFile()">✕ Remove</button>
+                    </div>
+
+                    <!-- Input Group -->
+                    <div class="input-group">
+                        <textarea 
+                            id="messageInput" 
+                            placeholder="Type your message... (Shift + Enter for new line)"
+                            rows="1"
+                            onkeydown="handleKeyPress(event)"
+                        ></textarea>
+                        <button id="sendBtn" onclick="sendMessage()" title="Send message">
+                            ➤
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LiveKit Video Container -->
+    <div class="livekit-container" id="livekitContainer">
+        <div class="livekit-header">
+            <span style="font-size: 14px; font-weight: 600;">Video Call</span>
+            <button class="livekit-btn" onclick="toggleVideo()">✕ Close</button>
+        </div>
+        <div id="livekitVideo"></div>
+        <div class="livekit-controls">
+            <button class="livekit-btn" onclick="toggleMute()">🎤 Mute</button>
+            <button class="livekit-btn" onclick="toggleCamera()">📹 Camera</button>
+            <button class="livekit-btn" onclick="shareScreen()">🖥️ Screen</button>
+        </div>
+    </div>
+
+    <!-- Recording Indicator -->
+    <div class="recording-indicator" id="recordingIndicator">
+        <div class="recording-dot"></div>
+        <span>Recording...</span>
+    </div>
+
+    <!-- Hidden File Inputs -->
+    <input type="file" id="imageInput" accept="image/*" onchange="handleFileSelect(event, 'image')">
+    <input type="file" id="audioInput" accept="audio/*" onchange="handleFileSelect(event, 'audio')">
+
+    <script>
+        // Global state
+        let currentMode = 'text';
+        let currentFile = null;
+        let currentFileType = null;
+        let livekitRoom = null;
+        let localTrack = null;
+
+        // Continuous audio recognition state
+        let continuousRecognition = null;
+        let isContinuousListening = false;
+        let speechTimeout = null;
+        let currentTranscript = '';
+        let currentPlayingAudio = null; // Track currently playing audio for stop command
+
+        // Continuous sign language detection state
+        let signLanguageInterval = null;
+        let capturedFrames = [];
+        let isDetectingSignLanguage = false;
+        let isScreenSharing = false; // Track if screen is being shared
+        let isVideoActive = false; // Track if camera video is active
+
+        // API Base URL
+        const API_BASE = window.location.origin;
+
+        // Initialize
+        window.addEventListener('load', async () => {
+            await loadChatHistory();
+            checkHealth();
+            autoResizeTextarea();
+        });
+
+        // Check backend health
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                console.log('Backend health:', data);
+            } catch (error) {
+                console.error('Backend is not responding:', error);
+                addMessage('assistant', '⚠️ Warning: Backend server is not responding. Please make sure the server is running.');
+            }
+        }
+
+        // Load chat history
+        async function loadChatHistory() {
+            try {
+                const response = await fetch(`${API_BASE}/history`);
+                const history = await response.json();
+                const historyContainer = document.getElementById('chatHistory');
+                
+                if (history.length === 0) {
+                    historyContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary); font-size: 13px;">No history yet</div>';
+                    return;
+                }
+
+                historyContainer.innerHTML = history.map(item => `
+                    <div class="history-item" title="${item.query}">
+                        ${item.query.substring(0, 50)}${item.query.length > 50 ? '...' : ''}
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading history:', error);
+            }
+        }
+
+        // Switch mode
+        function switchMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === mode);
+            });
+
+            if (mode === 'video') {
+                toggleVideo();
+            }
+        }
+
+        // Add message to chat
+        function addMessage(role, content, isHTML = false) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            
+            const avatar = role === 'user' ? '👤' : '🤖';
+            
+            if (isHTML) {
+                messageDiv.innerHTML = `
+                    <div class="avatar">${avatar}</div>
+                    <div class="message-content">${content}</div>
+                `;
+            } else {
+                const contentHTML = marked.parse(content);
+                messageDiv.innerHTML = `
+                    <div class="avatar">${avatar}</div>
+                    <div class="message-content">${contentHTML}</div>
+                `;
+                
+                // Add speak button for assistant messages
+                if (role === 'assistant' && 'speechSynthesis' in window) {
+                    const speakBtn = document.createElement('button');
+                    speakBtn.className = 'speak-btn';
+                    speakBtn.innerHTML = '🔊 Speak';
+                    speakBtn.style.cssText = 'margin-top: 8px; padding: 6px 12px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;';
+                    speakBtn.onclick = () => speakText(content, speakBtn);
+                    messageDiv.querySelector('.message-content').appendChild(speakBtn);
+                }
+            }
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Text-to-speech using Web Speech API
+        let currentUtterance = null;
+        
+        function speakText(text, button) {
+            // If currently speaking, stop it
+            if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+                if (button) {
+                    button.innerHTML = '🔊 Speak';
+                    button.style.background = 'var(--primary)';
+                }
+                return;
+            }
+
+            // Clean the text (remove markdown symbols and excessive whitespace)
+            const cleanText = text
+                .replace(/[#*_~`[\]]/g, '')
+                .replace(/\n\n+/g, '. ')
+                .replace(/\n/g, ' ')
+                .trim();
+
+            if (!cleanText) return;
+
+            currentUtterance = new SpeechSynthesisUtterance(cleanText);
+            
+            // Configure voice settings - FASTER SPEECH
+            currentUtterance.rate = 1.3;  // Increased from 1.0 to 1.3 (30% faster)
+            currentUtterance.pitch = 1.0;
+            currentUtterance.volume = 1.0;
+            currentUtterance.lang = 'en-US';
+
+            // Try to use a more natural voice
+            const voices = window.speechSynthesis.getVoices();
+            const preferredVoice = voices.find(voice => 
+                voice.lang.startsWith('en') && 
+                (voice.name.includes('Google') || voice.name.includes('Microsoft'))
+            );
+            if (preferredVoice) {
+                currentUtterance.voice = preferredVoice;
+            }
+
+            // Update button state
+            if (button) {
+                button.innerHTML = '⏹️ Stop';
+                button.style.background = 'var(--error)';
+            }
+
+            currentUtterance.onend = () => {
+                if (button) {
+                    button.innerHTML = '🔊 Speak';
+                    button.style.background = 'var(--primary)';
+                }
+                currentUtterance = null;
+            };
+
+            currentUtterance.onerror = (event) => {
+                console.error('Speech synthesis error:', event);
+                if (button) {
+                    button.innerHTML = '🔊 Speak';
+                    button.style.background = 'var(--primary)';
+                }
+                currentUtterance = null;
+            };
+
+            window.speechSynthesis.speak(currentUtterance);
+        }
+
+        // Load voices (needed for some browsers)
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                const voices = window.speechSynthesis.getVoices();
+                console.log('Available voices:', voices.length);
+            };
+        }
+
+        // Show thinking indicator
+        function showThinking() {
+            const messagesContainer = document.getElementById('chatMessages');
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.className = 'message assistant';
+            thinkingDiv.id = 'thinkingIndicator';
+            thinkingDiv.innerHTML = `
+                <div class="avatar">🤖</div>
+                <div class="message-content">
+                    <div class="thinking">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            `;
+            messagesContainer.appendChild(thinkingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function hideThinking() {
+            const thinking = document.getElementById('thinkingIndicator');
+            if (thinking) thinking.remove();
+        }
+
+        // Send message
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message && !currentFile) return;
+
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
+
+            try {
+                // Handle different modes
+                if (currentFile && currentFileType === 'image') {
+                    await sendImageMessage(message);
+                } else if (currentFile && currentFileType === 'audio') {
+                    await sendAudioMessage(message);
+                } else {
+                    await sendTextMessage(message);
+                }
+
+                // Clear input and reset height
+                input.value = '';
+                input.style.height = 'auto';
+                removeFile();
+                await loadChatHistory();
+            } catch (error) {
+                hideThinking();
+                addMessage('assistant', `❌ Error: ${error.message}`);
+            } finally {
+                sendBtn.disabled = false;
+                input.focus();
+            }
+        }
+
+        // Send text message
+        async function sendTextMessage(message) {
+            addMessage('user', message);
+            showThinking();
+
+            try {
+                // Check if we're in screen sharing mode
+                if (isScreenSharing) {
+                    // Capture current screen frame
+                    const frameData = await captureVideoFrame();
+                    if (frameData) {
+                        console.log('🖥️ Screen sharing mode - analyzing screen content with query...');
+                        const response = await fetch(`${API_BASE}/ask-about-screen`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                query: message,
+                                frame_data: frameData
+                            })
+                        });
+
+                        if (!response.ok) {
+                            const error = await response.json();
+                            throw new Error(error.detail || 'Request failed');
+                        }
+
+                        const data = await response.json();
+                        hideThinking();
+                        addMessage('assistant', data.answer);
+                        
+                        // Play audio response if available
+                        if (data.audio) {
+                            playAudioResponse(data.audio);
+                        }
+                        return;
+                    }
+                }
+
+                // Check if video is active (camera or screen share)
+                const videoActive = isVideoActive && livekitRoom && livekitRoom.state === 'connected' && !isScreenSharing;
+            
+                if (videoActive) {
+                    // Capture current video frame and analyze with Gemini Vision
+                    const frameData = await captureVideoFrame();
+                    if (frameData) {
+                        console.log('📤 Sending video frame for analysis...');
+                        const response = await fetch(`${API_BASE}/ask-with-video`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                query: message,
+                                frame_data: frameData
+                            })
+                        });
+
+                        if (!response.ok) {
+                            const error = await response.json();
+                            throw new Error(error.detail || 'Request failed');
+                        }
+
+                        const data = await response.json();
+                        hideThinking();
+                        addMessage('assistant', data.answer);
+                    
+                    // Play audio response if available
+                    if (data.audio) {
+                        playAudioResponse(data.audio);
+                    }
+                    return;
+                }
+            }
+
+            // Regular text query (no video)
+            const response = await fetch(`${API_BASE}/ask`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: message })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Request failed');
+            }
+
+            const data = await response.json();
+            hideThinking();
+            addMessage('assistant', data.answer);
+            
+            // Play audio response if available
+            if (data.audio) {
+                playAudioResponse(data.audio);
+            }
+            } catch (error) {
+                hideThinking();
+                console.error('Error in sendTextMessage:', error);
+                addMessage('assistant', `❌ Error: ${error.message}`);
+            }
+        }
+        
+        // Capture video frame from LiveKit
+        async function captureVideoFrame() {
+            try {
+                const videoContainer = document.getElementById('livekitVideo');
+                const videoElement = videoContainer.querySelector('video');
+                
+                if (!videoElement) {
+                    console.warn('No video element found');
+                    return null;
+                }
+
+                // Create canvas to capture frame
+                const canvas = document.createElement('canvas');
+                canvas.width = videoElement.videoWidth || 640;
+                canvas.height = videoElement.videoHeight || 480;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                
+                // Convert to base64
+                const frameData = canvas.toDataURL('image/jpeg', 0.8);
+                console.log('📸 Video frame captured for analysis');
+                return frameData;
+            } catch (error) {
+                console.error('Error capturing video frame:', error);
+                return null;
+            }
+        }
+        
+        // Play audio response
+        async function playAudioResponse(audioBase64) {
+            try {
+                // If LiveKit is connected, play through LiveKit audio track
+                if (livekitRoom && livekitRoom.state === 'connected') {
+                    await playAudioThroughLiveKit(audioBase64);
+                } else {
+                    // Fallback to regular audio player
+                    playAudioThroughBrowser(audioBase64);
+                }
+            } catch (err) {
+                console.error('Error playing audio:', err);
+                // Fallback to browser audio
+                playAudioThroughBrowser(audioBase64);
+            }
+        }
+
+        // Play audio through browser (fallback)
+        function playAudioThroughBrowser(audioBase64) {
+            const audio = new Audio('data:audio/mp3;base64,' + audioBase64);
+            currentPlayingAudio = audio; // Track for stop command
+            
+            audio.onended = () => {
+                currentPlayingAudio = null; // Clear when finished
+            };
+            
+            audio.play().catch(err => {
+                console.warn('Audio autoplay blocked:', err);
+                currentPlayingAudio = null;
+                // Add audio player to last message if autoplay blocked
+                const messages = document.querySelectorAll('.message.assistant');
+                const lastMessage = messages[messages.length - 1];
+                if (lastMessage) {
+                    const audioPlayer = document.createElement('audio');
+                    audioPlayer.controls = true;
+                    audioPlayer.src = 'data:audio/mp3;base64,' + audioBase64;
+                    audioPlayer.style.marginTop = '10px';
+                    audioPlayer.style.width = '100%';
+                    audioPlayer.style.maxWidth = '300px';
+                    lastMessage.appendChild(audioPlayer);
+                }
+            });
+        }
+
+        // Play audio through LiveKit
+        async function playAudioThroughLiveKit(audioBase64) {
+            console.log('Playing audio through LiveKit...');
+            
+            // Convert base64 to audio blob
+            const audioBlob = base64ToBlob(audioBase64, 'audio/mp3');
+            const audioUrl = URL.createObjectURL(audioBlob);
+            
+            // Create audio element and play
+            const audio = new Audio(audioUrl);
+            currentPlayingAudio = audio; // Track for stop command
+            
+            audio.onended = () => {
+                currentPlayingAudio = null; // Clear when finished
+            };
+            
+            // Get audio context and create media stream
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const source = audioContext.createMediaElementSource(audio);
+            const destination = audioContext.createMediaStreamDestination();
+            source.connect(destination);
+            source.connect(audioContext.destination); // Also play locally
+            
+            // Publish audio track to LiveKit
+            if (livekitRoom && destination.stream.getAudioTracks().length > 0) {
+                const LiveKit = window.LivekitClient || window.LiveKit || window.livekit;
+                const audioTrack = destination.stream.getAudioTracks()[0];
+                const localTrack = new LiveKit.LocalAudioTrack(audioTrack);
+                
+                await livekitRoom.localParticipant.publishTrack(localTrack);
+                console.log('AI audio published to LiveKit room');
+                
+                // Play the audio
+                await audio.play();
+                
+                // Cleanup after audio ends
+                audio.onended = async () => {
+                    currentPlayingAudio = null; // Clear when finished
+                    await livekitRoom.localParticipant.unpublishTrack(localTrack);
+                    localTrack.stop();
+                    URL.revokeObjectURL(audioUrl);
+                    console.log('AI audio track removed from LiveKit');
+                };
+            } else {
+                // Fallback if LiveKit not connected
+                await audio.play();
+            }
+        }
+
+        // Helper: Convert base64 to Blob
+        function base64ToBlob(base64, mimeType) {
+            const byteCharacters = atob(base64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            return new Blob([byteArray], { type: mimeType });
+        }
+
+        // Stop currently playing audio (for voice "stop" command)
+        function stopCurrentAudio() {
+            if (currentPlayingAudio) {
+                currentPlayingAudio.pause();
+                currentPlayingAudio.currentTime = 0;
+                currentPlayingAudio = null;
+                console.log('🛑 Audio stopped by voice command');
+                
+                // Show feedback message
+                const messages = document.getElementById('chatMessages');
+                const stopIndicator = document.createElement('div');
+                stopIndicator.style.cssText = 'text-align: center; padding: 10px; color: var(--text-secondary); font-size: 13px; font-style: italic;';
+                stopIndicator.textContent = '🛑 Audio stopped';
+                messages.appendChild(stopIndicator);
+                messages.scrollTop = messages.scrollHeight;
+                
+                // Remove indicator after 2 seconds
+                setTimeout(() => {
+                    stopIndicator.remove();
+                }, 2000);
+            }
+        }
+
+        // Send image message
+        async function sendImageMessage(message) {
+            const mode = message.toLowerCase().includes('hand') || message.toLowerCase().includes('sign') || message.toLowerCase().includes('gesture') 
+                ? 'hand_signs' 
+                : 'analyze';
+
+            // Show user message with image
+            const imagePreview = document.getElementById('previewImage').src;
+            addMessage('user', `
+                <img src="${imagePreview}" style="max-width: 200px; border-radius: 8px; margin-bottom: 8px;">
+                <p>${message || 'Analyze this image'}</p>
+            `, true);
+
+            showThinking();
+
+            const base64Data = currentFile.split(',')[1];
+            const response = await fetch(`${API_BASE}/ask/image`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    image_data: base64Data,
+                    query: message || null,
+                    mode: mode
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Request failed');
+            }
+
+            const data = await response.json();
+            hideThinking();
+            addMessage('assistant', data.answer);
+        }
+
+        // Send audio message
+        async function sendAudioMessage(message) {
+            addMessage('user', '🎤 Voice message: ' + (message || 'Processing audio...'));
+            showThinking();
+
+            const base64Data = currentFile.split(',')[1];
+            const response = await fetch(`${API_BASE}/ask/audio`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    audio_data: base64Data,
+                    query: message || null
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                hideThinking();
+                if (error.detail && error.detail.includes('Gemini API key')) {
+                    addMessage('assistant', `⚠️ **Audio transcription requires Gemini API key**\n\n` +
+                        `To enable audio features:\n` +
+                        `1. Get FREE API key: https://aistudio.google.com/apikey\n` +
+                        `2. Add to .env file: GEMINI_API_KEY=your-key\n` +
+                        `3. Restart server\n\n` +
+                        `See AUDIO_VIDEO_SETUP.md for detailed instructions.`);
+                } else {
+                    throw new Error(error.detail || 'Request failed');
+                }
+                return;
+            }
+
+            const data = await response.json();
+            hideThinking();
+            addMessage('assistant', data.answer);
+        }
+
+        // Recording functions using Web Speech API
+        let recognition = null;
+        let recognitionActive = false;
+
+        function initSpeechRecognition() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                console.error('Speech Recognition API not supported');
+                return null;
+            }
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            
+            recognition.continuous = true;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                console.log('Speech recognition started');
+                recognitionActive = true;
+            };
+
+            recognition.onend = () => {
+                console.log('Speech recognition ended');
+                recognitionActive = false;
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                const recordBtn = document.getElementById('recordBtn');
+                const indicator = document.getElementById('recordingIndicator');
+                recordBtn.classList.remove('active');
+                recordBtn.innerHTML = '🎤 Record';
+                indicator.classList.remove('active');
+                recognitionActive = false;
+                
+                if (event.error === 'no-speech') {
+                    alert('No speech detected. Please try again.');
+                } else if (event.error === 'not-allowed') {
+                    alert('Microphone access denied. Please allow microphone access in your browser settings.');
+                } else {
+                    alert('Speech recognition error: ' + event.error);
+                }
+            };
+
+            recognition.onresult = (event) => {
+                const last = event.results.length - 1;
+                const transcript = event.results[last][0].transcript;
+                
+                console.log('Recognized text:', transcript);
+                
+                // INTERRUPT AI SPEECH when user speaks via record button
+                if (window.speechSynthesis.speaking) {
+                    console.log('🛑 User speaking - stopping AI speech');
+                    window.speechSynthesis.cancel();
+                }
+                
+                // Check for "stop" command to interrupt AI speech
+                if (/\b(stop|pause|quiet|shut up|be quiet)\b/i.test(transcript)) {
+                    console.log('🛑 Stop command detected in recording');
+                    stopCurrentAudio();
+                    // Stop recognition
+                    recognition.stop();
+                    // Update UI
+                    const recordBtn = document.getElementById('recordBtn');
+                    const indicator = document.getElementById('recordingIndicator');
+                    recordBtn.classList.remove('active');
+                    recordBtn.innerHTML = '🎤 Record';
+                    indicator.classList.remove('active');
+                    return; // Don't send as message
+                }
+                
+                // Stop recognition
+                recognition.stop();
+                
+                // Update UI
+                const recordBtn = document.getElementById('recordBtn');
+                const indicator = document.getElementById('recordingIndicator');
+                recordBtn.classList.remove('active');
+                recordBtn.innerHTML = '🎤 Record';
+                indicator.classList.remove('active');
+                
+                // Send the recognized text directly (not through input field to avoid duplication)
+                sendTextMessage(transcript);
+            };
+
+            return recognition;
+        }
+
+        async function toggleRecording() {
+            const recordBtn = document.getElementById('recordBtn');
+            const indicator = document.getElementById('recordingIndicator');
+
+            if (recognitionActive && recognition) {
+                // Stop recording
+                recognition.stop();
+                recordBtn.classList.remove('active');
+                recordBtn.innerHTML = '🎤 Record';
+                indicator.classList.remove('active');
+            } else {
+                // Start recording - STOP AI SPEECH FIRST
+                if (window.speechSynthesis.speaking) {
+                    console.log('🛑 Starting to record - stopping AI speech');
+                    window.speechSynthesis.cancel();
+                }
+                
+                try {
+                    if (!recognition) {
+                        recognition = initSpeechRecognition();
+                        if (!recognition) {
+                            alert('Speech Recognition is not supported in your browser. Please use Chrome, Edge, or Safari.');
+                            return;
+                        }
+                    }
+
+                    recognition.start();
+                    recordBtn.classList.add('active');
+                    recordBtn.innerHTML = '⏹️ Stop';
+                    indicator.classList.add('active');
+                } catch (error) {
+                    console.error('Recognition start error:', error);
+                    alert('Could not start speech recognition: ' + error.message);
+                }
+            }
+        }
+
+        // Continuous audio listening with auto-send
+        let recognitionRestarting = false;
+        
+        function toggleContinuousAudio() {
+            const btn = document.getElementById('continuousAudioBtn');
+            
+            if (isContinuousListening) {
+                // Stop continuous listening
+                isContinuousListening = false;
+                recognitionRestarting = false;
+                
+                if (continuousRecognition) {
+                    try {
+                        continuousRecognition.stop();
+                    } catch (e) {
+                        console.log('Recognition already stopped');
+                    }
+                    continuousRecognition = null;
+                }
+                if (speechTimeout) {
+                    clearTimeout(speechTimeout);
+                    speechTimeout = null;
+                }
+                currentTranscript = '';
+                btn.classList.remove('active');
+                btn.innerHTML = '🎙️ Auto Listen';
+                btn.style.backgroundColor = '';
+                console.log('🎙️ Continuous listening stopped');
+            } else {
+                // Start continuous listening - STOP AI SPEECH FIRST
+                if (window.speechSynthesis.speaking) {
+                    console.log('🛑 Starting auto-listen - stopping AI speech');
+                    window.speechSynthesis.cancel();
+                }
+                
+                if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                    alert('Speech Recognition is not supported in your browser. Please use Chrome, Edge, or Safari.');
+                    return;
+                }
+
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                continuousRecognition = new SpeechRecognition();
+                continuousRecognition.continuous = true;
+                continuousRecognition.interimResults = true;
+                continuousRecognition.lang = 'en-US';
+                continuousRecognition.maxAlternatives = 1;
+
+                continuousRecognition.onstart = () => {
+                    console.log('🎙️ Continuous listening started');
+                    recognitionRestarting = false;
+                    btn.classList.add('active');
+                    btn.innerHTML = '🔴 Listening...';
+                    btn.style.backgroundColor = '#ef4444';
+                };
+
+                continuousRecognition.onresult = (event) => {
+                    console.log('🎤 Speech detected');
+                    
+                    // INTERRUPT AI SPEECH when user starts speaking
+                    if (window.speechSynthesis.speaking) {
+                        console.log('🛑 User speaking - stopping AI speech');
+                        window.speechSynthesis.cancel();
+                    }
+                    
+                    let interimTranscript = '';
+                    let finalTranscript = '';
+
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const transcript = event.results[i][0].transcript;
+                        if (event.results[i].isFinal) {
+                            finalTranscript += transcript + ' ';
+                        } else {
+                            interimTranscript += transcript;
+                        }
+                    }
+
+                    // Show what we're hearing in the input box
+                    const messageInput = document.getElementById('messageInput');
+                    messageInput.value = currentTranscript + finalTranscript + interimTranscript;
+
+                    // Update current transcript with final results
+                    if (finalTranscript) {
+                        currentTranscript += finalTranscript;
+                        console.log('📝 Captured:', currentTranscript);
+
+                        // Check for "stop" command
+                        if (/\b(stop|pause|quiet|shut up|be quiet)\b/i.test(currentTranscript)) {
+                            stopCurrentAudio();
+                            currentTranscript = '';
+                            messageInput.value = '';
+                            return;
+                        }
+
+                        // Clear previous timeout
+                        if (speechTimeout) {
+                            clearTimeout(speechTimeout);
+                        }
+
+                        // Auto-send after 1.5 seconds of silence
+                        speechTimeout = setTimeout(async () => {
+                            if (currentTranscript.trim()) {
+                                console.log('✅ Sending:', currentTranscript.trim());
+                                await sendTextMessage(currentTranscript.trim());
+                                currentTranscript = '';
+                                messageInput.value = '';
+                            }
+                        }, 1500);
+                    }
+                };
+
+                continuousRecognition.onerror = (event) => {
+                    console.error('🚨 Error:', event.error);
+                    
+                    // Ignore aborted and no-speech errors - they're normal
+                    if (event.error === 'aborted' || event.error === 'no-speech') {
+                        return;
+                    }
+                    
+                    if (event.error === 'not-allowed') {
+                        addMessage('system', 'Microphone access denied. Please enable microphone permissions.');
+                        toggleContinuousAudio();
+                    } else if (event.error === 'network') {
+                        addMessage('system', 'Network error occurred. Please check your connection.');
+                        toggleContinuousAudio();
+                    }
+                };
+
+                continuousRecognition.onend = () => {
+                    console.log('🏁 Recognition ended');
+                    
+                    // Only restart if still listening and not already restarting
+                    if (isContinuousListening && !recognitionRestarting) {
+                        recognitionRestarting = true;
+                        setTimeout(() => {
+                            if (isContinuousListening && continuousRecognition) {
+                                try {
+                                    continuousRecognition.start();
+                                } catch (error) {
+                                    console.error('Restart failed:', error);
+                                    recognitionRestarting = false;
+                                }
+                            } else {
+                                recognitionRestarting = false;
+                            }
+                        }, 500);
+                    }
+                };
+
+                try {
+                    isContinuousListening = true;
+                    continuousRecognition.start();
+                } catch (error) {
+                    console.error('Start failed:', error);
+                    isContinuousListening = false;
+                    alert('Could not start speech recognition: ' + error.message);
+                }
+            }
+        }
+
+        // File handling
+        function triggerFileUpload(type) {
+            document.getElementById(`${type}Input`).click();
+        }
+
+        function handleFileSelect(event, type) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentFile = e.target.result;
+                currentFileType = type;
+
+                if (type === 'image') {
+                    document.getElementById('previewImage').src = e.target.result;
+                    document.getElementById('fileName').textContent = file.name;
+                    document.getElementById('filePreview').classList.add('active');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeFile() {
+            currentFile = null;
+            currentFileType = null;
+            document.getElementById('filePreview').classList.remove('active');
+            document.getElementById('imageInput').value = '';
+            document.getElementById('audioInput').value = '';
+        }
+
+        // LiveKit Video/Screen Share
+        async function toggleVideo() {
+            const container = document.getElementById('livekitContainer');
+            
+            if (container.classList.contains('active')) {
+                // Close video
+                stopContinuousSignLanguageDetection(); // Stop sign language detection
+                
+                if (livekitRoom) {
+                    await livekitRoom.disconnect();
+                    livekitRoom = null;
+                }
+                
+                // Stop basic WebRTC stream if active
+                if (localTrack) {
+                    if (localTrack.stop) {
+                        localTrack.stop(); // LiveKit track
+                    } else if (localTrack.getTracks) {
+                        // MediaStream (basic WebRTC)
+                        localTrack.getTracks().forEach(track => track.stop());
+                    }
+                    localTrack = null;
+                }
+                
+                container.classList.remove('active');
+            } else {
+                // Start video
+                try {
+                    // Get token from backend
+                    const response = await fetch(`${API_BASE}/livekit/token?room_name=ai-assistant&participant_name=user`, {
+                        method: 'POST'
+                    });
+                    
+                    if (!response.ok) {
+                        const error = await response.json();
+                        addMessage('assistant', `⚠️ **LiveKit Error**\n\n${error.detail}`);
+                        return;
+                    }
+                    
+                    const data = await response.json();
+                    console.log('LiveKit token received:', { url: data.url, room: data.room });
+
+                    // Check for LiveKit library - MUST be available for hand sign detection
+                    console.log('Looking for LiveKit library...');
+                    console.log('window.LivekitClient:', window.LivekitClient);
+                    console.log('window.LiveKit:', window.LiveKit);
+                    console.log('window.livekit:', window.livekit);
+                    
+                    // Try to get LiveKit from window
+                    let LiveKit = null;
+                    
+                    if (typeof window.LivekitClient !== 'undefined') {
+                        LiveKit = window.LivekitClient;
+                        console.log('✅ Using window.LivekitClient');
+                    } else if (typeof window.LiveKit !== 'undefined') {
+                        LiveKit = window.LiveKit;
+                        console.log('✅ Using window.LiveKit');
+                    } else if (typeof window.livekit !== 'undefined') {
+                        LiveKit = window.livekit;
+                        console.log('✅ Using window.livekit');
+                    }
+                    
+                    // If LiveKit not found, FAIL - no fallback for hand sign detection
+                    if (!LiveKit || typeof LiveKit.Room === 'undefined') {
+                        throw new Error('LiveKit library not loaded! Hand sign detection requires LiveKit. Please refresh the page.');
+                    }
+
+                    console.log('✅ LiveKit library found:', LiveKit);
+                    
+                    // Create room instance
+                    livekitRoom = new LiveKit.Room({
+                        adaptiveStream: true,
+                        dynacast: true,
+                        videoCaptureDefaults: {
+                            resolution: LiveKit.VideoPresets?.h720?.resolution || { width: 1280, height: 720 },
+                        },
+                    });
+
+                    // Set up event listeners
+                    livekitRoom.on('participantConnected', (participant) => {
+                        console.log('🔵 Participant connected:', participant.identity);
+                    });
+
+                    livekitRoom.on('trackSubscribed', (track, publication, participant) => {
+                        console.log('📹 Track subscribed:', track.kind, 'from', participant.identity);
+                        if (track.kind === 'video') {
+                            const videoElement = track.attach();
+                            videoElement.style.width = '100%';
+                            videoElement.style.height = '100%';
+                            document.getElementById('livekitVideo').appendChild(videoElement);
+                        } else if (track.kind === 'audio') {
+                            track.attach(); // Audio plays automatically
+                        }
+                    });
+
+                    livekitRoom.on('disconnected', () => {
+                        console.log('Disconnected from room');
+                        container.classList.remove('active');
+                    });
+
+                    // Connect to room
+                    await livekitRoom.connect(data.url, data.token);
+                    console.log('✅ Connected to LiveKit room');
+
+                    // Get and publish local camera
+                    const videoTrack = await LiveKit.createLocalVideoTrack({
+                        resolution: LiveKit.VideoPresets?.h720?.resolution || { width: 1280, height: 720 },
+                    });
+                    
+                    await livekitRoom.localParticipant.publishTrack(videoTrack);
+                    localTrack = videoTrack;
+
+                    // Attach local video
+                    const videoElement = videoTrack.attach();
+                    videoElement.autoplay = true;
+                    videoElement.muted = true; // Mute own audio to prevent feedback
+                    videoElement.style.width = '100%';
+                    videoElement.style.height = '100%';
+                    
+                    const videoContainer = document.getElementById('livekitVideo');
+                    videoContainer.innerHTML = '';
+                    videoContainer.appendChild(videoElement);
+
+                    // Get and publish microphone - AUTOMATICALLY ENABLED WITH VIDEO
+                    const audioTrack = await LiveKit.createLocalAudioTrack();
+                    await livekitRoom.localParticipant.publishTrack(audioTrack);
+                    console.log('🎤 Microphone automatically enabled with video');
+
+                    container.classList.add('active');
+                    console.log('✅ Video container active class added, should be visible now');
+                    console.log('Container element:', container);
+                    console.log('Container display style:', window.getComputedStyle(container).display);
+                    
+                    // Set video active flag
+                    isVideoActive = true;
+                    
+                    // Video is ready for on-demand analysis
+                    console.log('📹 Video ready - ask questions about what you show!');
+                    
+                    addMessage('assistant', '📹 **Video Connected!**\n\n' +
+                        '✨ **I can now see your camera or screen**\n\n' +
+                        '**Ask me anything:**\n' +
+                        '• "What am I holding?"\n' +
+                        '• "What do you see?"\n' +
+                        '• "Describe what\'s in my hand"\n' +
+                        '• "What gesture am I making?"\n\n' +
+                        '**How it works:**\n' +
+                        '• Type your question in the text box\n' +
+                        '• I\'ll capture the current video frame\n' +
+                        '• And answer based on what I see!\n\n' +
+                        '💡 **Tip:** You can also use voice input or switch to screen share!');
+                    
+                } catch (error) {
+                    console.error('❌ LiveKit error:', error);
+                    isVideoActive = false;
+                    addMessage('assistant', `❌ **Video Connection Failed**\n\n${error.message}\n\n` +
+                        `**Requirements:**\n` +
+                        `1. LiveKit library must load properly\n` +
+                        `2. Camera/microphone permissions needed\n` +
+                        `3. LiveKit server must be configured\n\n` +
+                        `**Try:**\n` +
+                        `• Refresh page (Ctrl+Shift+R)\n` +
+                        `• Check browser console for errors\n` +
+                        `• Verify .env credentials`);
+                }
+            }
+        }
+
+        async function toggleMute() {
+            if (livekitRoom && livekitRoom.localParticipant) {
+                const audioTracks = livekitRoom.localParticipant.audioTracks;
+                audioTracks.forEach((publication) => {
+                    if (publication.track) {
+                        publication.track.muted = !publication.track.muted;
+                        const btn = event.target;
+                        btn.textContent = publication.track.muted ? '🔇 Unmute' : '🎤 Mute';
+                    }
+                });
+            }
+        }
+
+        async function toggleCamera() {
+            if (localTrack) {
+                localTrack.muted = !localTrack.muted;
+                const btn = event.target;
+                btn.textContent = localTrack.muted ? '📷 Enable' : '📹 Camera';
+            }
+        }
+
+        async function shareScreen() {
+            try {
+                if (!livekitRoom) {
+                    alert('Please start a video call first');
+                    return;
+                }
+
+                // STOP sign language detection when screen sharing
+                console.log('🛑 Stopping sign language detection for screen share');
+                stopContinuousSignLanguageDetection();
+                isScreenSharing = true; // Mark that we're screen sharing
+                isVideoActive = false; // Disable video analysis when screen sharing
+
+                const LiveKit = window.LivekitClient || window.LiveKit || window.livekit;
+                const screenTrack = await LiveKit.createLocalScreenTracks({
+                    audio: true,
+                    resolution: LiveKit.VideoPresets.h1080.resolution,
+                });
+
+                await livekitRoom.localParticipant.publishTrack(screenTrack[0]);
+                
+                // Listen for when screen sharing ends (user clicks "Stop Sharing" in browser)
+                screenTrack[0].on('ended', () => {
+                    console.log('📺 Screen sharing ended by user');
+                    isScreenSharing = false; // Reset flag
+                    isVideoActive = true; // Re-enable video analysis
+                    addMessage('assistant', '✅ Screen sharing stopped. You can re-enable your camera if needed.');
+                });
+                
+                const videoElement = screenTrack[0].attach();
+                videoElement.style.width = '100%';
+                videoElement.style.height = '100%';
+                
+                const videoContainer = document.getElementById('livekitVideo');
+                videoContainer.innerHTML = '';
+                videoContainer.appendChild(videoElement);
+
+                // Screen sharing ready for on-demand analysis
+                console.log('🖥️ Screen sharing active - ready for analysis');
+                
+                addMessage('assistant', '🖥️ **Screen Sharing Started!**\n\n' +
+                    '✨ **I can now see your screen!**\n\n' +
+                    '**Ask me anything:**\n' +
+                    '• "What code is on my screen?"\n' +
+                    '• "Explain this error"\n' +
+                    '• "What do you see?"\n' +
+                    '• "Help me debug this"\n\n' +
+                    '**How it works:**\n' +
+                    '• Type your question\n' +
+                    '• I\'ll capture the current screen\n' +
+                    '• And answer based on what I see!\n\n' +
+                    '� **Tip:** You can use text input or voice!');
+            } catch (error) {
+                console.error('Screen sharing error:', error);
+                alert('Screen sharing failed: ' + error.message);
+                // Reset flags on error
+                isScreenSharing = false;
+                isVideoActive = true;
+            }
+        }
+
+        // Utility functions
+        function newChat() {
+            clearChat();
+        }
+
+        // Continuous Sign Language Detection
+        function startContinuousSignLanguageDetection() {
+            // Don't start detection if screen sharing is active
+            if (isScreenSharing) {
+                console.log('🚫 Sign language detection blocked - screen sharing is active');
+                return;
+            }
+            
+            console.log('🤟 ========================================');
+            console.log('🤟 CONTINUOUS SIGN LANGUAGE DETECTION STARTING');
+            console.log('🤟 ========================================');
+            console.log('📹 Camera active:', livekitRoom ? 'YES' : 'NO');
+            console.log('🎯 Detection enabled:', true);
+            console.log('⏱️ Capture interval: 500ms (2 FPS)');
+            console.log('🛑 Auto-stop timeout: 3 seconds');
+            console.log('🤟 ========================================');
+            
+            isDetectingSignLanguage = true;
+            capturedFrames = [];
+            lastMotionDetected = Date.now();
+            
+            // Capture frames every 500ms (2 frames per second)
+            signLanguageInterval = setInterval(async () => {
+                if (!isDetectingSignLanguage) return;
+                
+                try {
+                    const frameData = await captureVideoFrame();
+                    if (frameData) {
+                        capturedFrames.push(frameData);
+                        lastMotionDetected = Date.now();
+                        
+                        console.log(`📸 Captured frame ${capturedFrames.length}/6`);
+                        
+                        // When we have 6 frames (3 seconds), interpret them
+                        if (capturedFrames.length >= 6) {
+                            console.log('✅ 6 frames captured, interpreting sign language...');
+                            
+                            // Stop capturing temporarily
+                            clearInterval(signLanguageInterval);
+                            signLanguageInterval = null;
+                            
+                            // Interpret the frames
+                            await interpretSignLanguage();
+                            
+                            // Clear frames and restart detection
+                            capturedFrames = [];
+                            
+                            // Restart detection after a short delay
+                            if (isDetectingSignLanguage) {
+                                setTimeout(() => {
+                                    if (isDetectingSignLanguage && !signLanguageInterval) {
+                                        console.log('🔄 Restarting sign language detection...');
+                                        signLanguageInterval = setInterval(async () => {
+                                            try {
+                                                const frameData = await captureVideoFrame();
+                                                if (frameData) {
+                                                    capturedFrames.push(frameData);
+                                                    console.log(`📸 Captured frame ${capturedFrames.length}/6`);
+                                                    
+                                                    // Check if we have 6 frames again
+                                                    if (capturedFrames.length >= 6) {
+                                                        clearInterval(signLanguageInterval);
+                                                        signLanguageInterval = null;
+                                                        await interpretSignLanguage();
+                                                        capturedFrames = [];
+                                                        
+                                                        // Restart again if still in detection mode
+                                                        if (isDetectingSignLanguage) {
+                                                            setTimeout(arguments.callee, 2000);
+                                                        }
+                                                    }
+                                                }
+                                            } catch (error) {
+                                                console.error('Frame capture error:', error);
+                                            }
+                                        }, 500);
+                                    }
+                                }, 2000); // 2 second pause between interpretations
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Frame capture error:', error);
+                }
+            }, 500); // Capture every 500ms
+        }
+        
+        function stopContinuousSignLanguageDetection() {
+            console.log('🛑 Stopping sign language detection');
+            isDetectingSignLanguage = false;
+            
+            if (signLanguageInterval) {
+                clearInterval(signLanguageInterval);
+                signLanguageInterval = null;
+            }
+            
+            capturedFrames = [];
+        }
+        
+        // Screen Content Analysis (for screen sharing)
+        let screenAnalysisInterval = null;
+        
+        function startScreenContentAnalysis() {
+            console.log('🖥️ ========================================');
+            console.log('🖥️ SCREEN CONTENT ANALYSIS MODE STARTING');
+            console.log('🖥️ ========================================');
+            
+            // Capture screen content every 5 seconds for analysis on user request
+            // This is passive - only analyzes when user asks questions
+            screenAnalysisInterval = setInterval(async () => {
+                if (!isScreenSharing) {
+                    stopScreenContentAnalysis();
+                    return;
+                }
+                
+                // Just keep the frame buffer updated for when user asks questions
+                const frameData = await captureVideoFrame();
+                if (frameData) {
+                    capturedFrames = [frameData]; // Keep only the latest frame
+                    console.log('📸 Screen frame captured (ready for analysis on request)');
+                }
+            }, 5000); // Every 5 seconds
+        }
+        
+        function stopScreenContentAnalysis() {
+            console.log('🛑 Stopping screen content analysis');
+            if (screenAnalysisInterval) {
+                clearInterval(screenAnalysisInterval);
+                screenAnalysisInterval = null;
+            }
+            capturedFrames = [];
+        }
+        
+        async function interpretSignLanguage() {
+            if (capturedFrames.length === 0) {
+                console.log('⚠️ No frames to interpret');
+                return;
+            }
+            
+            console.log(`🔍 Interpreting ${capturedFrames.length} frames of sign language...`);
+            showThinking();
+            
+            try {
+                console.log('📤 Sending request to backend...');
+                const response = await fetch(`${API_BASE}/continuous-sign-language`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        frames: capturedFrames
+                    })
+                });
+                
+                console.log('📥 Response status:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('✅ Response received from server:', data);
+                console.log('📝 Response answer:', data.answer);
+                console.log('🔊 Response audio present:', !!data.audio);
+                
+                console.log('🧹 Hiding thinking indicator...');
+                hideThinking();
+                console.log('✅ Thinking indicator hidden');
+                
+                // Show AI's response
+                console.log('📝 Adding message to chat:', data.answer);
+                addMessage('assistant', data.answer);
+                console.log('✅ Message added to chat');
+                
+                // Play audio response
+                if (data.audio) {
+                    console.log('🔊 Playing audio response');
+                    await playAudioThroughBrowser(data.audio);
+                    console.log('✅ Audio played');
+                } else {
+                    console.log('⚠️ No audio in response');
+                }
+                
+                // Clear captured frames for next sequence
+                capturedFrames = [];
+                console.log('✅ Sign language interpreted and responded successfully');
+                
+            } catch (error) {
+                console.error('❌ Sign language interpretation error:', error);
+                console.error('Error details:', error.message, error.stack);
+                addMessage('assistant', `⚠️ Error interpreting sign language: ${error.message}`);
+                capturedFrames = []; // Clear frames anyway
+            } finally {
+                // ALWAYS hide thinking indicator, no matter what
+                console.log('🔄 Finally block: ensuring thinking indicator is hidden');
+                hideThinking();
+            }
+        }
+
+        function clearChat() {
+            const messages = document.getElementById('chatMessages');
+            messages.innerHTML = `
+                <div class="message assistant">
+                    <div class="avatar">🤖</div>
+                    <div class="message-content">
+                        <p>Chat cleared! How can I help you?</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function clearAllChats() {
+            if (!confirm('Are you sure you want to clear ALL chat history? This cannot be undone.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/history`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    // Clear the chat display
+                    clearChat();
+                    // Reload empty history
+                    await loadChatHistory();
+                    addMessage('assistant', '✅ All chat history has been cleared!');
+                } else {
+                    addMessage('assistant', '❌ Failed to clear chat history');
+                }
+            } catch (error) {
+                console.error('Error clearing chat history:', error);
+                addMessage('assistant', `❌ Error clearing history: ${error.message}`);
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function autoResizeTextarea() {
+            const textarea = document.getElementById('messageInput');
+            textarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+            });
+        }
+    </script>
+</body>
+</html>
