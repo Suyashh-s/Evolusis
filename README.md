@@ -34,17 +34,17 @@ This project implements a sophisticated AI agent backend service that exceeds th
 ## Application Screenshots
 
 ### Screenshot 1: AI Assistant Interface with Question Response
-![AI Assistant answering "Who invented the telephone?"](https://raw.githubusercontent.com/Suyashh-s/Evolusis/main/screenshots/screenshot1.png)
+![AI Assistant answering "Who invented the telephone?"](https://raw.githubusercontent.com/Suyashh-s/Evolusis/main/screenshots/Screenshot%202025-10-25%20172703.png)
 
 *The AI assistant demonstrates its knowledge base by accurately responding to factual queries using Google Gemini's built-in knowledge.*
 
 ### Screenshot 2: News Summarization Feature
-![AI providing comprehensive AI news summary](https://raw.githubusercontent.com/Suyashh-s/Evolusis/main/screenshots/screenshot2.png)
+![AI providing comprehensive AI news summary](https://raw.githubusercontent.com/Suyashh-s/Evolusis/main/screenshots/Screenshot%202025-10-25%20172800.png)
 
 *Advanced content generation showcasing the assistant's ability to synthesize information about current AI developments, covering topics like Generative AI, Ethics, Healthcare applications, and more.*
 
 ### Screenshot 3: Multi-Query Conversation
-![Multiple queries with context awareness](https://raw.githubusercontent.com/Suyashh-s/Evolusis/main/screenshots/screenshot3.png)
+![Multiple queries with context awareness](https://raw.githubusercontent.com/Suyashh-s/Evolusis/main/screenshots/Screenshot%202025-10-25%20172825.png)
 
 *Demonstrates conversation history and context awareness - the assistant remembers previous interactions and provides consistent responses across multiple queries.*
 
