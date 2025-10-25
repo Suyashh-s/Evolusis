@@ -179,7 +179,7 @@ def get_weather(city: str) -> str:
         raise Exception(f"Unable to fetch weather data. Error: {str(e)}")
 
 def search_wikipedia(query: str) -> str:
-    """Search Wikipedia for information about a topic."""
+    """Search Wikipedia for information about a topic. Returns brief factual information."""
     logger.info(f"Tool called: search_wikipedia(query='{query}')")
     
     try:
@@ -188,17 +188,19 @@ def search_wikipedia(query: str) -> str:
         
         if not search_results:
             logger.info(f"No Wikipedia results found for: {query}")
-            return f"No information found on Wikipedia for '{query}'."
+            # Don't return an error - let the agent handle it
+            raise Exception(f"No Wikipedia results found for '{query}'. The agent should use its own knowledge.")
         
         # Get the first result
         page = wiki.page(search_results[0])
         summary = page.summary[:500]  # First 500 characters
         
         logger.info(f"Wikipedia summary retrieved successfully for: {query}")
-        return f"Wikipedia: {summary}... (Source: {page.url})"
+        return f"{summary}..."
     except Exception as e:
         logger.error(f"Error searching Wikipedia: {str(e)}")
-        return f"Unable to fetch information from Wikipedia. Error: {str(e)}"
+        # Raise exception so agent can try using its own knowledge
+        raise Exception(f"Wikipedia lookup failed. The agent should answer from its own knowledge base.")
 
 def get_news(topic: str) -> str:
     """Get latest news articles about a topic."""
@@ -330,27 +332,12 @@ def text_to_speech(text: str) -> str:
         logger.error(f"Error in text-to-speech: {str(e)}")
         return ""
 
-# Create LangChain tools (only text, audio, video - no image analysis)
+# Create LangChain tools (only weather API - everything else from Gemini)
 tools = [
     Tool(
         name="get_weather",
         func=get_weather,
-        description="Useful for getting current weather information for a city. Input should be a city name. Requires OPENWEATHER_API_KEY to be configured."
-    ),
-    Tool(
-        name="search_wikipedia",
-        func=search_wikipedia,
-        description="Useful for finding factual information about people, places, things, or concepts. Input should be a search query or topic."
-    ),
-    Tool(
-        name="get_news",
-        func=get_news,
-        description="Useful for getting the latest news articles about a specific topic. Input should be the topic or keyword you want news about. Requires NEWS_API_KEY to be configured."
-    ),
-    Tool(
-        name="transcribe_audio",
-        func=transcribe_audio,
-        description="Useful for converting voice/audio to text via LiveKit or Gemini. Input should be base64 encoded audio data."
+        description="Useful for getting current weather information for a city. Input should be a city name. Use this tool ONLY for weather-related queries (temperature, conditions, forecast). Requires OPENWEATHER_API_KEY to be configured."
     )
 ]
 
@@ -363,7 +350,8 @@ CORE CAPABILITIES:
 • Voice transcription and natural language processing
 • Screen share content analysis
 • Multi-turn conversation with context awareness
-• Information retrieval (weather, news, Wikipedia)
+• Comprehensive knowledge base (history, science, technology, current events, etc.)
+• Weather information via OpenWeatherMap API
 
 COMMUNICATION GUIDELINES:
 • Maintain a professional, clear, and concise tone
@@ -385,10 +373,18 @@ VIDEO & VISUAL ANALYSIS:
 • Maintain professionalism in all visual interpretations
 
 RESPONSE PROTOCOL:
-• For factual queries: Use appropriate tools (weather, news, Wikipedia)
+• For WEATHER queries ONLY: Use the get_weather tool
+• For ALL OTHER queries: Use your extensive built-in knowledge base
+  - Historical facts (e.g., "Who invented the telephone?")
+  - General knowledge (e.g., "What is the capital of France?")
+  - Current events and news (use your training data)
+  - Scientific concepts and explanations
+  - Technology and programming help
+  - Any factual or conversational queries
 • For visual queries: Analyze camera or screen share feed
-• For errors: Communicate issues clearly and suggest solutions
-• For missing information: Check conversation history first, then ask for clarification
+• NEVER say "I don't have information" - you have comprehensive knowledge
+
+IMPORTANT: You are Google Gemini with vast knowledge across all domains. Answer confidently from your training data. Only use the weather tool for weather queries.
 
 Always prioritize accuracy, clarity, and professional communication standards."""),
     MessagesPlaceholder(variable_name="chat_history", optional=True),

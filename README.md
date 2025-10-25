@@ -31,6 +31,25 @@ This project implements a sophisticated AI agent backend service that exceeds th
 
 ---
 
+## Application Screenshots
+
+### Screenshot 1: AI Assistant Interface with Question Response
+![AI Assistant answering "Who invented the telephone?"](https://raw.githubusercontent.com/Suyashh-s/Evolusis/main/screenshots/screenshot1.png)
+
+*The AI assistant demonstrates its knowledge base by accurately responding to factual queries using Google Gemini's built-in knowledge.*
+
+### Screenshot 2: News Summarization Feature
+![AI providing comprehensive AI news summary](https://raw.githubusercontent.com/Suyashh-s/Evolusis/main/screenshots/screenshot2.png)
+
+*Advanced content generation showcasing the assistant's ability to synthesize information about current AI developments, covering topics like Generative AI, Ethics, Healthcare applications, and more.*
+
+### Screenshot 3: Multi-Query Conversation
+![Multiple queries with context awareness](https://raw.githubusercontent.com/Suyashh-s/Evolusis/main/screenshots/screenshot3.png)
+
+*Demonstrates conversation history and context awareness - the assistant remembers previous interactions and provides consistent responses across multiple queries.*
+
+---
+
 ## System Architecture
 
 ### Project Structure
@@ -532,18 +551,22 @@ pydantic==2.5.0               # Data validation
 
 ## Demonstration Video
 
-**Video Walkthrough:** [Insert Loom Video Link]
+**Video Walkthrough:** [Watch on Loom](https://www.loom.com/share/4e87ee3302524e3f985284d8717fa067)
 
 **Content Coverage:**
 1. System architecture and design overview
-2. Weather query demonstration with reasoning
-3. News and Wikipedia query examples
+2. **Weather query demonstration** - Shows both scenarios:
+   - With OpenWeatherMap API (successful weather data retrieval)
+   - Without API/API failure (Gemini uses built-in knowledge as fallback)
+3. General knowledge queries (historical facts, geography)
 4. Conversation memory demonstration
 5. Speech input and output features
 6. Code walkthrough of key components
 7. Testing and validation procedures
 
 **Duration:** 2-3 minutes (as per assignment requirements)
+
+**Note:** The video demonstrates the intelligent fallback mechanism where the system uses OpenWeatherMap API for weather queries, and relies on Gemini's built-in knowledge for all other queries including news, facts, and general information.
 
 ---
 
