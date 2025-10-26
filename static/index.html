@@ -533,26 +533,201 @@
 
         /* Responsive */
         @media (max-width: 768px) {
+            /* Mobile layout adjustments */
+            .app-container {
+                flex-direction: column;
+            }
+
             .sidebar {
-                position: absolute;
-                left: -260px;
+                position: fixed;
+                left: -280px;
+                top: 0;
                 z-index: 1000;
                 height: 100vh;
+                width: 280px;
+                transition: left 0.3s ease;
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
             }
 
             .sidebar.active {
-                transform: translateX(260px);
+                left: 0;
             }
 
-            .livekit-container {
+            .main-content {
                 width: 100%;
+                margin-left: 0;
+            }
+
+            /* Add hamburger menu button */
+            .chat-header::before {
+                content: '☰';
+                position: absolute;
+                left: 15px;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 24px;
+                cursor: pointer;
+                color: var(--text);
+                z-index: 10;
+            }
+
+            .chat-header h2 {
+                margin-left: 40px;
+                font-size: 14px;
+            }
+
+            /* Mobile input area */
+            .input-area {
+                padding: 10px;
+                gap: 8px;
+            }
+
+            #messageInput {
+                font-size: 14px;
+                padding: 10px;
+                max-height: 100px;
+            }
+
+            .input-actions {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+
+            .input-actions button {
+                padding: 8px 12px;
+                font-size: 12px;
+                min-width: 40px;
+            }
+
+            #sendBtn {
+                width: 50px;
+                height: 50px;
+            }
+
+            /* Mobile messages */
+            .message {
+                max-width: 95%;
+                font-size: 14px;
+                padding: 12px;
+            }
+
+            .message-content {
+                font-size: 14px;
+            }
+
+            .avatar {
+                width: 32px;
+                height: 32px;
+                font-size: 18px;
+            }
+
+            /* Mobile mode selector */
+            .mode-selector {
+                gap: 5px;
+                flex-wrap: wrap;
+            }
+
+            .mode-btn {
+                padding: 6px 10px;
+                font-size: 11px;
+            }
+
+            /* Mobile LiveKit */
+            .livekit-container {
+                width: 95%;
+                max-width: 350px;
+                right: 50%;
+                transform: translateX(50%);
+                bottom: 80px;
+                border-radius: 12px;
+            }
+
+            #livekitVideo {
+                max-height: 250px;
+            }
+
+            /* Mobile continuous listen indicator */
+            .continuous-listen-indicator {
+                bottom: 80px;
+                right: 10px;
+                padding: 8px 12px;
+                font-size: 11px;
+            }
+
+            /* Mobile thinking indicator */
+            .thinking {
+                font-size: 13px;
+                padding: 10px;
+            }
+
+            /* Mobile sidebar header */
+            .sidebar-header {
+                padding: 15px;
+            }
+
+            .new-chat-btn {
+                font-size: 13px;
+                padding: 10px;
+            }
+
+            /* Mobile chat history */
+            .chat-history-item {
+                padding: 10px;
+                font-size: 13px;
+            }
+
+            /* Hide overlay for sidebar */
+            .sidebar.active::after {
+                content: '';
+                position: fixed;
+                top: 0;
+                left: 280px;
                 right: 0;
                 bottom: 0;
-                border-radius: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: -1;
+            }
+
+            /* Mobile file preview */
+            .file-preview {
+                max-width: 200px;
+            }
+
+            /* Mobile developer info */
+            .sidebar [style*="padding: 15px"] {
+                padding: 10px !important;
+                font-size: 11px !important;
+            }
+        }
+
+        /* Small mobile devices */
+        @media (max-width: 480px) {
+            .chat-header h2 {
+                font-size: 13px;
             }
 
             .message {
-                max-width: 100%;
+                font-size: 13px;
+            }
+
+            .input-actions button {
+                padding: 6px 8px;
+                font-size: 11px;
+            }
+
+            #sendBtn {
+                width: 45px;
+                height: 45px;
+            }
+
+            .livekit-container {
+                width: 90%;
+                max-width: 300px;
+            }
+
+            .mode-btn {
+                padding: 5px 8px;
+                font-size: 10px;
             }
         }
 
@@ -768,7 +943,31 @@
             await loadChatHistory();
             checkHealth();
             autoResizeTextarea();
+            setupMobileMenu();
         });
+
+        // Setup mobile menu toggle
+        function setupMobileMenu() {
+            const chatHeader = document.querySelector('.chat-header');
+            const sidebar = document.querySelector('.sidebar');
+            
+            // Toggle sidebar on header click (mobile only)
+            chatHeader.addEventListener('click', (e) => {
+                if (window.innerWidth <= 768 && e.target === chatHeader) {
+                    sidebar.classList.toggle('active');
+                }
+            });
+
+            // Close sidebar when clicking outside (mobile only)
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth <= 768 && 
+                    sidebar.classList.contains('active') && 
+                    !sidebar.contains(e.target) && 
+                    !chatHeader.contains(e.target)) {
+                    sidebar.classList.remove('active');
+                }
+            });
+        }
 
         // Check backend health
         async function checkHealth() {
