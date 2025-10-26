@@ -603,9 +603,22 @@
                 <button class="new-chat-btn" onclick="clearAllChats()" style="background: #dc3545; margin-bottom: 10px;">
                     <span>🗑️</span> Clear All Chats
                 </button>
-                <div class="status-badge">
-                    <div class="status-dot"></div>
-                    <span>Powered by Gemini (FREE)</span>
+                
+                <!-- Developer Info Section -->
+                <div style="padding: 15px; margin-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: center;">
+                    <div style="font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 600;">
+                        Built by
+                    </div>
+                    <div style="font-size: 13px; color: #e0e0e0; font-weight: 500; margin-bottom: 6px;">
+                        Suyash Sawant
+                    </div>
+                    <a href="mailto:suyashsawant9114@gmail.com" style="font-size: 11px; color: #10b981; text-decoration: none; transition: color 0.2s; display: block; margin-bottom: 12px;" onmouseover="this.style.color='#34d399'" onmouseout="this.style.color='#10b981'">
+                        📧 suyashsawant9114@gmail.com
+                    </a>
+                    <div class="status-badge" style="justify-content: center; display: inline-flex;">
+                        <div class="status-dot"></div>
+                        <span>Powered by Gemini (FREE)</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1828,8 +1841,13 @@
                 screenTrack[0].on('ended', () => {
                     console.log('📺 Screen sharing ended by user');
                     isScreenSharing = false; // Reset flag
-                    isVideoActive = true; // Re-enable video analysis
-                    addMessage('assistant', '✅ Screen sharing stopped. You can re-enable your camera if needed.');
+                    isVideoActive = false; // Don't auto-enable video analysis
+                    
+                    // Clear the video container to remove black screen
+                    const videoContainer = document.getElementById('livekitVideo');
+                    videoContainer.innerHTML = '';
+                    
+                    addMessage('assistant', '✅ Screen sharing stopped. Switched back to normal chat mode.');
                 });
                 
                 const videoElement = screenTrack[0].attach();

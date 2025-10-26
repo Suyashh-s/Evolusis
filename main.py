@@ -476,7 +476,21 @@ async def ask_question(request: QueryRequest):
     
     except Exception as e:
         logger.error(f"Error processing query: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Error processing query: {str(e)}")
+        
+        # Provide user-friendly error messages
+        error_msg = str(e).lower()
+        if "429" in error_msg or "quota" in error_msg or "rate limit" in error_msg or "resource exhausted" in error_msg:
+            friendly_error = "⚠️ **API Limit Reached**\n\nThe Gemini API has reached its usage limit. Please try again in a few moments.\n\n💡 **Tip:** Free tier has limited requests per minute."
+        elif "503" in error_msg or "overload" in error_msg or "temporarily unavailable" in error_msg:
+            friendly_error = "⚠️ **Service Temporarily Unavailable**\n\nThe Gemini API is currently experiencing high load. Please try again in a moment."
+        elif "api key" in error_msg or "authentication" in error_msg:
+            friendly_error = "⚠️ **Authentication Error**\n\nThere's an issue with the API key configuration. Please check your settings."
+        elif "network" in error_msg or "connection" in error_msg:
+            friendly_error = "⚠️ **Network Error**\n\nUnable to connect to the AI service. Please check your internet connection."
+        else:
+            friendly_error = f"⚠️ **Something went wrong**\n\n{str(e)}"
+        
+        raise HTTPException(status_code=500, detail=friendly_error)
 
 # Multimodal request models - MUST BE BEFORE ENDPOINTS THAT USE THEM
 class AudioRequest(BaseModel):
@@ -587,7 +601,17 @@ Analyze the image and provide your professional assessment."""
         
     except Exception as e:
         logger.error(f"Error in video query: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+        
+        # Provide user-friendly error messages
+        error_msg = str(e).lower()
+        if "429" in error_msg or "quota" in error_msg or "rate limit" in error_msg or "resource exhausted" in error_msg:
+            friendly_error = "⚠️ **API Limit Reached**\n\nThe Gemini API has reached its usage limit. Please try again in a few moments."
+        elif "503" in error_msg or "overload" in error_msg:
+            friendly_error = "⚠️ **Service Temporarily Unavailable**\n\nPlease try again in a moment."
+        else:
+            friendly_error = f"⚠️ **Error:** {str(e)}"
+        
+        raise HTTPException(status_code=500, detail=friendly_error)
 
 @app.post("/ask-about-screen")
 async def ask_about_screen(request: VideoFrameRequest):
@@ -623,6 +647,9 @@ async def ask_about_screen(request: VideoFrameRequest):
 
 **USER QUERY:** {request.query}
 
+**CRITICAL INSTRUCTION - BLACK SCREEN HANDLING:**
+If the screen is completely black, blank, or contains no visible content, DO NOT mention the screen state. Instead, answer the user's query directly using your general knowledge base, as if it were a regular question without screen context.
+
 **ANALYSIS OBJECTIVE:**
 Examine the screen share content and provide a clear, professional response to the user's query.
 
@@ -635,13 +662,15 @@ Examine the screen share content and provide a clear, professional response to t
 • Error Messages: Troubleshooting, root cause analysis, solution recommendations
 
 **RESPONSE GUIDELINES:**
-✓ Address the specific query with relevant screen content insights
+✓ If screen is black/blank: Answer the query using your knowledge base (like a normal question)
+✓ If screen has content: Address the query with relevant screen content insights
 ✓ For code: Explain logic, identify issues, suggest improvements
 ✓ For errors: Diagnose problems and provide actionable solutions
 ✓ For documents: Extract key information and provide analysis
 ✓ Maintain technical accuracy and professional communication
 ✓ Reference conversation history when contextually appropriate
 
+✗ Do not mention "the screen is black/blank" - just answer the question directly
 ✗ Do not interpret screen content as gestures or physical objects
 ✗ Avoid vague or overly general observations
 ✗ Do not provide unnecessary information beyond the query scope
@@ -676,7 +705,17 @@ Analyze the screen content and deliver your professional assessment."""
         
     except Exception as e:
         logger.error(f"Error in screen content analysis: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+        
+        # Provide user-friendly error messages
+        error_msg = str(e).lower()
+        if "429" in error_msg or "quota" in error_msg or "rate limit" in error_msg or "resource exhausted" in error_msg:
+            friendly_error = "⚠️ **API Limit Reached**\n\nThe Gemini API has reached its usage limit. Please try again in a few moments."
+        elif "503" in error_msg or "overload" in error_msg:
+            friendly_error = "⚠️ **Service Temporarily Unavailable**\n\nPlease try again in a moment."
+        else:
+            friendly_error = f"⚠️ **Error:** {str(e)}"
+        
+        raise HTTPException(status_code=500, detail=friendly_error)
 
 @app.post("/continuous-sign-language")
 async def continuous_sign_language(request: ContinuousSignRequest):
